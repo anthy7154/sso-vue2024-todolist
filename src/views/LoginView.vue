@@ -48,7 +48,7 @@ const router = useRouter()
 // pinia
 const todoListStore = useTodoListStore()
 const api = todoListStore.api
-const { token } = storeToRefs(todoListStore) // 登入後取得的 token
+// const { token } = storeToRefs(todoListStore) // 登入後取得的 token
 
 // user input
 const signInField = ref({
@@ -66,11 +66,17 @@ const signIn = async () => {
       signInField.value
     )
     signInRes.value = `登入成功`
-    token.value = res.data.token
+    // 先不要存 cookie
+    // token.value = res.data.token
 
     // tokenCheckout.value = res.data.token
     // checkout()
     // getTodos();
+
+    // 將 token 存入 cookie
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.cookie = `hexschoolTodo=${res.data.token}; expires=${tomorrow.toUTCString()}`;
 
     alert(signInRes.value)
     // console.log(token.value)

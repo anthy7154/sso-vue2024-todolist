@@ -10,7 +10,10 @@ export const useTodoListStore = defineStore('todoListStore', () => {
   const api = ref('https://todolist-api.hexschool.io')
   const token = ref('') // 登入後取得的 token
 
-  return { api, token }
+  // const userNickname = ref('')
+  const todoActiveTab = ref('all')
+
+  return { api, token, todoActiveTab }
 
   // return { count, doubleCount, increment }
 })
