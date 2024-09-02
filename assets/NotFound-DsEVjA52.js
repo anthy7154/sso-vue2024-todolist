@@ -1,0 +1,1 @@
+import{a as t,c as s,o as a,b as e,m as n}from"./index-BHgHY_nF.js";const c={class:"bg-yellow"},r=e("div",{class:"conatiner loginPage vhContainer"},[e("h1",{class:"h1"},[n(" 404 Not Found "),e("p",null,"您即將跳轉至登入頁面")])],-1),_=[r],h={__name:"NotFound",setup(l){const o=t();return setTimeout(()=>{o.push("/login")},3e3),(i,u)=>(a(),s("div",c,_))}};export{h as default};
