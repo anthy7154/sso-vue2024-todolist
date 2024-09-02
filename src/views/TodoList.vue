@@ -139,9 +139,12 @@ const filteredTodos = computed(() => {
 
 // 新增 todo ==============================
 const addTodo = async () => {
+  if (newTodo.value.trim() === "") {
+    alert("請輸入 Todo 內容，再進行提交")
+    return;
+  }
   try {
     // console.log(newTodo.value)
-
     await axios.post(`${api}/todos/`,
       {
         content: newTodo.value
