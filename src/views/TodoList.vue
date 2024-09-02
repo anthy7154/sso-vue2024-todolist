@@ -3,8 +3,8 @@
     <nav>
       <h1><a href="#">ONLINE TODO LIST</a></h1>
       <ul>
-        <li class="todo_sm"><a href="#"><span>{{ userNickname }} 的代辦</span></a></li>
-        <li><a href="#loginPage" v-on:click="signOut">登出</a></li>
+        <li class="todo_sm"><a href="#/todo"><span>{{ userNickname }} 的代辦</span></a></li>
+        <li><a href="#" v-on:click="signOut">登出</a></li>
       </ul>
     </nav>
     <div class="conatiner todoListPage vhContainer">
@@ -18,18 +18,18 @@
 
         <div class="todoList_list">
           <ul class="todoList_tab">
-            <li><a href="#/all" :class="{ active: todoActiveTab === 'all' }" v-on:click="handleActive('all')">全部</a>
+            <li><a href="#/todo" :class="{ active: todoActiveTab === 'all' }" v-on:click="handleActive('all')">全部</a>
             </li>
-            <li><a href="#/unfinished" :class="{ active: todoActiveTab === 'unfinished' }"
+            <li><a href="#/todo" :class="{ active: todoActiveTab === 'unfinished' }"
                 v-on:click="handleActive('unfinished')">待完成</a></li>
-            <li><a href="#/finished" :class="{ active: todoActiveTab === 'finished' }"
+            <li><a href="#/todo" :class="{ active: todoActiveTab === 'finished' }"
                 v-on:click="handleActive('finished')">已完成</a></li>
           </ul>
 
           <div class="todoList_items">
             <p v-if="todos.length === 0">目前尚無待辦事項</p>
             <ul class="todoList_item">
-              <li v-for="(todo) in todos" v-bind:key="todo.id">
+              <li v-for="(todo) in filteredTodos" v-bind:key="todo.id">
                 <label class="todoList_label" v-on:click="toggleTodoStatus(todo.id)">
                   <input class="todoList_input" type="checkbox" value="true" :checked="todo.status">
                   <span>{{ todo.content }}</span>
@@ -40,7 +40,8 @@
               </li>
             </ul>
             <div class="todoList_statistics">
-              <p v-if="todos.length > 0">{{ countUnfinished }} 個待完成項目</p>
+              <p v-if="todos.length > 0 && todoActiveTab !== 'finished'">{{ countUnfinished }} 個待完成項目</p>
+              <p v-if="todos.length > 0 && todoActiveTab === 'finished'">{{ countFinished }} 個已完成項目</p>
             </div>
           </div>
         </div>
@@ -60,7 +61,7 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter()
 const todoListStore = useTodoListStore()
-const { token } = storeToRefs(todoListStore)
+const { token, userNickname } = storeToRefs(todoListStore)
 const api = todoListStore.api
 
 // 驗證 ==============================
@@ -82,31 +83,28 @@ const checkout = async () => {
     });
     // console.log(res);
 
-    // user.value = res.data
     checkoutRes.value = `驗證成功, UID: ${res.data.uid}, Nickname: ${res.data.nickname}`
-    console.log(checkoutRes.value)
+    userNickname.value = res.data.nickname
+    // console.log(checkoutRes.value)
 
-    // // 將 token 存入 cookie
-    // const tomorrow = new Date();
-    // tomorrow.setDate(tomorrow.getDate() + 1);
-    // document.cookie = `hexschoolTodo=${token.value}; expires=${tomorrow.toUTCString()}`;
-
-    // // 驗證成功後，將已驗證的 token 拿去執行 getTodos()
+    // 驗證成功後，將已驗證的 token 拿去執行 getTodos()
     token.value = tokenCheckout.value
     getTodos()
 
   } catch (error) {
-    console.log(error.message)
+    // console.log(error.message)
     checkoutRes.value = `驗證失敗, ${error.message}`
+    console.log(checkoutRes.value)
+
+    alert("驗證失敗，請重新登入")
+    router.push('/login')
   }
 };
 
 // ToDo List ==============================
 const todos = ref([])
-// const filteredTodos = ref([])
 const newTodo = ref("")
 const { todoActiveTab } = storeToRefs(todoListStore)
-
 
 // 取得所有 todos ==============================
 const getTodos = async () => {
@@ -124,7 +122,6 @@ const getTodos = async () => {
       todos.value[index] = {
         ...todo,
         "createTime": new Date(todo.createTime * 1000).toLocaleString(),
-        "editable": false,
       }
     })
     // console.log("todos:", todos.value)
@@ -134,11 +131,11 @@ const getTodos = async () => {
   }
 }
 
-// const filteredTodos = computed(() => {
-//   // todos.value.forEach()
-//   return todos.value.filter((todo) => {
-//   })
-// })
+const filteredTodos = computed(() => {
+  return todos.value.filter((todo) => {
+    return (todoActiveTab.value === "finished") ? todo.status === true : (todoActiveTab.value === "unfinished") ? todo.status === false : todo
+  })
+})
 
 // 新增 todo ==============================
 const addTodo = async () => {
@@ -196,8 +193,8 @@ const toggleTodoStatus = async (todoId) => {
 // 登出 ==============================
 // signout 時，API 那端會將該組 cookie 失效，不能再用於 chekcout，如果一開始沒先過 checkout 就 signout 那會驗證不過 
 // 但失效的 cookie 還是能 signout 登出成功 (應該還存在伺服器)
-// const tokenSignOut = ref("");
 const signOutRes = ref("");
+const reset = todoListStore.$reset
 
 const signOut = async () => {
   try {
@@ -211,15 +208,17 @@ const signOut = async () => {
       });
     // console.log(res);
     signOutRes.value = res.data.message;
-    console.log(signOutRes.value)
+    alert(signOutRes.value)
 
-    // tokenCheckout.value = ""
     token.value = ""
     document.cookie = `hexschoolTodo=; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
 
+    // 重置 pinia 資料
+    reset()
+
     setTimeout(() => {
       router.push('/login')
-    }, 500);
+    }, 3000);
 
   } catch (error) {
     console.log(error)
@@ -238,6 +237,16 @@ const countUnfinished = computed(() => {
   return count
 })
 
+const countFinished = computed(() => {
+  const count = ref(0)
+  todos.value.forEach((todo) => {
+    if (todo.status === true) {
+      count.value++
+    }
+  })
+  return count
+})
+
 const handleActive = (status) => {
   todoActiveTab.value = status
   // console.log(todoActiveTab.value)
@@ -248,11 +257,12 @@ onMounted(() => {
   // console.log(token)
 
   if (token.value) {
-    // tokenCheckout.value = token.value
     // checkout()
 
     getTodos()
   }
 });
+
+
 
 </script>
