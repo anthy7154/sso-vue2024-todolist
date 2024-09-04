@@ -1,4 +1,4 @@
-# sso-vue2024-final
+# sso-vue2024-todolist
 
 This template should help get you started developing with Vue 3 in Vite.
 
